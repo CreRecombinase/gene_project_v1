@@ -1,0 +1,35 @@
+---
+title: "tidy genomics"
+author: "Nicholas Knoblauch"
+date: "9/20/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r download_data}
+library(tidyverse)
+download.file("https://ndownloader.figshare.com/files/14417834",destfile = "../data/shell_data.tar.gz")
+untar("../data/shell_data.tar.gz",exdir = "../data/")
+new_files <- dir("../data",recursive=TRUE,full.names = TRUE)
+```
+
+
+```{r}
+fastq_files <- new_files[str_detect(string = new_files,pattern = ".fastq")]
+fastq_1 <- read_lines(fastq_files[1])
+head(fastq_1)
+```
+`fastq` files have 4 lines per read. they are
+1) a line starting with `@` with the "name" of the read and metadata
+2) the sequence
+
+```{r}
+
+```
+
+
+
