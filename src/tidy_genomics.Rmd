@@ -26,9 +26,16 @@ head(fastq_1)
 `fastq` files have 4 lines per read. they are
 1) a line starting with `@` with the "name" of the read and metadata
 2) the sequence
+3) the metadata again 
+4) the quality score for each 
+
 
 ```{r}
+fastq_line_names <- c("read_id","sequence","read_id2","qual")
+fastq_id=rep_len(fastq_line_names,length(fastq_1))
+fastq_df <-tibble(id=fastq_id,lines=fastq_1)
 
+f_df <- spread(fastq_df,)
 ```
 
 
