@@ -13,7 +13,7 @@ editor_options:
 
 ```{r}
 library(tidyverse)
-new_files <- dir("data",
+new_files <- dir("data/shell_data/untrimmed_fastq",
                  recursive=TRUE,
                  full.names = TRUE)
 (new_files)
@@ -110,8 +110,8 @@ read_fastq <- function(file,name=file){
                       read=read_id,
                       field = fastq_fields,
                       lines = fastq_1)
-  fastq_df <- fastq_df %>% 
-    filter(field != "metadata2")
+ # fastq_df <- fastq_df %>% 
+#    filter(field != "metadata2")
   
   pivot_fastq_df <- fastq_df %>% 
     spread(key = field,value = lines)
@@ -137,34 +137,58 @@ read_fastq <- function(file,name=file){
 ```
 
 ```{r}
-fastq_df_1 <- read_fastq(fastq_files[1],name="SRR097977")
-fastq_df_2 <- read_fastq(fastq_files[2],name="SRR098026")
+#fastq_df_1 <- read_fastq(fastq_files[1],name="SRR097977")
+#fastq_df_2 <- read_fastq(fastq_files[2],name="SRR098026")
 
-fastq_df <- bind_rows(fastq_df_1,
-                      fastq_df_2)
+#fastq_df <- bind_rows(fastq_df_1,
+                      #fastq_df_2)
 
-fastq_df <- map_df(fastq_files,read_fastq)
+#fastq_df <- map_df(fastq_files,read_fastq)
 fastq_df <- map2_df(fastq_files,c("SRR097977",
                                   "SRR098026"),
                     read_fastq)
 
-fastq_df %>% 
-  filter(grepl("N",sequence)) %>% 
-  group_by(name) %>% 
-  summarise(num_N=n())
+new_fastq_df <- fastq_df %>% 
+  filter(!grepl("N",sequence)) %>%
+  mutate(length=paste0("length=",length)) %>% 
+  unite(col="metadata1",sr_id,tag,length) %>% select(-name) %>% 
+  gather(key = "field",value= "lines",metadata1,metadata2,score,sequence) %>% 
+  mutate(field=factor(field,levels=c("metadata1",
+                                     "sequence",
+                                     "metadata2",
+                                     "score"))) %>% 
+                      arrange(read,field)
 
-fastq_df <- fastq_df %>% mutate(seq_list=str_split(sequence,pattern=""))
-fastq_seq_list <- fastq_df$seq_list
+write_lines(new_fastq_df$lines,path = "data/clean.fastq")
 
 
-count_N <- function(x){
-  sum(x=='N')
+#change this call to split quality score
+fastq_df <- fastq_df %>% 
+  mutate(
+  seq_list = str_split(
+    string = sequence,
+    pattern=""
+    )
+  ,score_list = str_split(string = score,pattern = "")
+  )
+
+
+
+#change this function to count the '?'
+count_char <- function(x,char="?"){
+  sum(x==char)
 }
 
-count_N(fastq_seq_list[[2]])
-fastq_df <- fastq_df %>% mutate(num_N=map_int(seq_list,count_N))
+count_q <- function(x){
+  sum(x=="?")
+}
 
-ggplot(fastq_df,aes(x=num_N)) + geom_histogram()
+# and this one
+fastq_df <- fastq_df %>% mutate(
+  num_N = map_int(seq_list,count_char,char="N"),
+  num_q = map_int(score_list,count_char,char="?"))
+#change this line too
+ggplot(fastq_df,aes(x=num_q,y=num_N)) + geom_point()
 ```
 
 
