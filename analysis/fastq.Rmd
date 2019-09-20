@@ -9,7 +9,144 @@ editor_options:
 
 ## Introduction
 
+
+
+```{r}
+library(tidyverse)
+new_files <- dir("data",
+                 recursive=TRUE,
+                 full.names = TRUE)
+(new_files)
+```
+
+
+To subset data use the `[` operator. To find a string
+use the `grepl` function
+```{r}
+fastq_files <- new_files[grepl("fastq",new_files)]
+fastq_1 <- read_lines(fastq_files[1])
+```
+
+Fastq files have four lines per read.
+
+1)header line has metadata
+2)sequence itself
+3)the same metadata (?)
+4)quality score per base
+
+```{r}
+fastq_fields <- c("metadata",
+                  "sequence",
+                  "metadata2",
+                  "score")
+length(fastq_1)
+num_reads <- length(fastq_1)/4
+read_id <- gl(num_reads,k=4)
+fastq_fields <- rep_len(fastq_fields,
+                        length.out = length(fastq_1))
+```
+
+## Creating Dataframes (`tibbles`)
+
 ```{r}
 
+fastq_df <- tibble( read=read_id,
+                    field = fastq_fields,
+                   lines = fastq_1)
+fastq_df <- fastq_df %>% 
+  filter(field != "metadata2")
+
+pivot_fastq_df <- fastq_df %>% 
+  spread(key = field,value = lines)
+
+
+
+
 ```
+
+
+```{r}
+head(pivot_fastq_df) %>%
+  pull(metadata)
+
+pivot_fastq_df <- separate(pivot_fastq_df,
+                           metadata,
+                           into = c("sr_id",
+                                    "tag",
+                                    "length"),
+                           sep = " ")
+pivot_fastq_df <- mutate(pivot_fastq_df,
+                         
+                         length = str_replace(
+                           length,
+                           pattern = "length=",
+                           replacement = "")
+                         ) %>%
+  mutate(length=as.integer(length))
+
+filter(pivot_fastq_df,length!=36)
+```
+
+## Refactoring
+
+Refactoring is changing code without its behavior
+
+Let's refactor our code to be a function
+
+```{r}
+read_fastq <- function(file,name=file){
+  fastq_1 <- read_lines(file)
+  fastq_fields <- c("metadata",
+                    "sequence",
+                    "metadata2",
+                    "score")
+  
+  num_reads <- length(fastq_1)/4
+  read_id <- gl(num_reads,k=4)
+  fastq_fields <- rep_len(fastq_fields,
+                          length.out = length(fastq_1))
+  
+  fastq_df <- tibble( name = name,
+                      read=read_id,
+                      field = fastq_fields,
+                      lines = fastq_1)
+  fastq_df <- fastq_df %>% 
+    filter(field != "metadata2")
+  
+  pivot_fastq_df <- fastq_df %>% 
+    spread(key = field,value = lines)
+  head(pivot_fastq_df) %>%
+    pull(metadata)
+  
+  pivot_fastq_df <- separate(pivot_fastq_df,
+                             metadata,
+                             into = c("sr_id",
+                                      "tag",
+                                      "length"),
+                             sep = " ")
+  pivot_fastq_df <- mutate(pivot_fastq_df,
+                           length = str_replace(
+                             length,
+                             pattern = "length=",
+                             replacement = "")
+  ) %>%
+    mutate(length=as.integer(length))
+  
+  return(pivot_fastq_df)
+}
+```
+
+```{r}
+fastq_df_1 <- read_fastq(fastq_files[1],name="SRR097977")
+fastq_df_2 <- read_fastq(fastq_files[2],name="SRR098026")
+
+fastq_df <- bind_rows(fastq_df_1,
+                      fastq_df_2)
+
+fastq_df <- map_df(fastq_files,read_fastq)
+fastq_df <- map2_df(fastq_files,c("SRR097977",
+                                  "SRR098026"),
+                    read_fastq)
+```
+
 
