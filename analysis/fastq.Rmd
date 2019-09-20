@@ -147,6 +147,24 @@ fastq_df <- map_df(fastq_files,read_fastq)
 fastq_df <- map2_df(fastq_files,c("SRR097977",
                                   "SRR098026"),
                     read_fastq)
+
+fastq_df %>% 
+  filter(grepl("N",sequence)) %>% 
+  group_by(name) %>% 
+  summarise(num_N=n())
+
+fastq_df <- fastq_df %>% mutate(seq_list=str_split(sequence,pattern=""))
+fastq_seq_list <- fastq_df$seq_list
+
+
+count_N <- function(x){
+  sum(x=='N')
+}
+
+count_N(fastq_seq_list[[2]])
+fastq_df <- fastq_df %>% mutate(num_N=map_int(seq_list,count_N))
+
+ggplot(fastq_df,aes(x=num_N)) + geom_histogram()
 ```
 
 
