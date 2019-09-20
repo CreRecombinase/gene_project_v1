@@ -528,10 +528,10 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomCreRecombinasegeneprojectv1tree895956c982a0dfa907dbc675d81c47f5bb43738ctargetblank895956ca"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/CreRecombinase/gene_project_v1/tree/895956c982a0dfa907dbc675d81c47f5bb43738c" target="_blank">895956c</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomCreRecombinasegeneprojectv1tree767f69bd0c10286bd85b7ec11f4a34469540d463targetblank767f69ba"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/CreRecombinase/gene_project_v1/tree/767f69bd0c10286bd85b7ec11f4a34469540d463" target="_blank">767f69b</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomCreRecombinasegeneprojectv1tree895956c982a0dfa907dbc675d81c47f5bb43738ctargetblank895956ca" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomCreRecombinasegeneprojectv1tree767f69bd0c10286bd85b7ec11f4a34469540d463targetblank767f69ba" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -580,6 +580,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/CreRecombinase/gene_project_v1/blob/767f69bd0c10286bd85b7ec11f4a34469540d463/analysis/fastq.Rmd" target="_blank">767f69b</a>
+</td>
+<td>
+Nicholas Knoblauch
+</td>
+<td>
+2019-09-20
+</td>
+<td>
+wflow_publish(“analysis/fastq.Rmd”)
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/CreRecombinase/gene_project_v1/2b9d4725b55a690118731c2c5b2b76d1e103af6d/docs/fastq.html" target="_blank">2b9d472</a>
+</td>
+<td>
+Nicholas Knoblauch
+</td>
+<td>
+2019-09-20
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -641,12 +675,12 @@ wflow_publish(“analysis/fastq.Rmd”)
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>── Attaching packages ──────────────── tidyverse 1.2.1.9000 ──</code></pre>
+<pre><code>── Attaching packages ─────── tidyverse 1.2.1.9000 ──</code></pre>
 <pre><code>✔ ggplot2 3.2.1     ✔ purrr   0.3.2
 ✔ tibble  2.1.3     ✔ dplyr   0.8.3
 ✔ tidyr   0.8.3     ✔ stringr 1.4.0
 ✔ readr   1.3.1     ✔ forcats 0.4.0</code></pre>
-<pre><code>── Conflicts ──────────────────────── tidyverse_conflicts() ──
+<pre><code>── Conflicts ─────────────── tidyverse_conflicts() ──
 ✖ dplyr::filter() masks stats::filter()
 ✖ dplyr::lag()    masks stats::lag()</code></pre>
 <pre class="r"><code>new_files &lt;- dir(&quot;data&quot;,
@@ -765,7 +799,31 @@ fastq_df &lt;- bind_rows(fastq_df_1,
 fastq_df &lt;- map_df(fastq_files,read_fastq)
 fastq_df &lt;- map2_df(fastq_files,c(&quot;SRR097977&quot;,
                                   &quot;SRR098026&quot;),
-                    read_fastq)</code></pre>
+                    read_fastq)
+
+fastq_df %&gt;% 
+  filter(grepl(&quot;N&quot;,sequence)) %&gt;% 
+  group_by(name) %&gt;% 
+  summarise(num_N=n())</code></pre>
+<pre><code># A tibble: 1 x 2
+  name      num_N
+  &lt;chr&gt;     &lt;int&gt;
+1 SRR098026   249</code></pre>
+<pre class="r"><code>fastq_df &lt;- fastq_df %&gt;% mutate(seq_list=str_split(sequence,pattern=&quot;&quot;))
+fastq_seq_list &lt;- fastq_df$seq_list
+
+
+count_N &lt;- function(x){
+  sum(x==&#39;N&#39;)
+}
+
+count_N(fastq_seq_list[[2]])</code></pre>
+<pre><code>[1] 0</code></pre>
+<pre class="r"><code>fastq_df &lt;- fastq_df %&gt;% mutate(num_N=map_int(seq_list,count_N))
+
+ggplot(fastq_df,aes(x=num_N)) + geom_histogram()</code></pre>
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="figure/fastq.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -807,17 +865,17 @@ loaded via a namespace (and not attached):
 [16] dbplyr_1.4.0         modelr_0.1.4         readxl_1.3.1        
 [19] munsell_0.5.0        gtable_0.3.0         workflowr_1.3.0.9000
 [22] cellranger_1.1.0     rvest_0.3.4          evaluate_0.14       
-[25] knitr_1.23           fansi_0.4.0          broom_0.5.2         
-[28] Rcpp_1.0.2           scales_1.0.0         backports_1.1.4     
-[31] jsonlite_1.6         fs_1.3.1             hms_0.5.0           
-[34] digest_0.6.20        stringi_1.4.3        grid_3.6.1          
-[37] rprojroot_1.3-2      cli_1.1.0            tools_3.6.1         
-[40] magrittr_1.5         lazyeval_0.2.2       crayon_1.3.4        
-[43] whisker_0.3-2        pkgconfig_2.0.2      zeallot_0.1.0       
-[46] xml2_1.2.2           reprex_0.3.0         lubridate_1.7.4     
-[49] assertthat_0.2.1     rmarkdown_1.13       httr_1.4.1          
-[52] rstudioapi_0.10      R6_2.4.0             nlme_3.1-140        
-[55] git2r_0.26.1         compiler_3.6.1      </code></pre>
+[25] labeling_0.3         knitr_1.23           fansi_0.4.0         
+[28] broom_0.5.2          Rcpp_1.0.2           scales_1.0.0        
+[31] backports_1.1.4      jsonlite_1.6         fs_1.3.1            
+[34] hms_0.5.0            digest_0.6.20        stringi_1.4.3       
+[37] grid_3.6.1           rprojroot_1.3-2      cli_1.1.0           
+[40] tools_3.6.1          magrittr_1.5         lazyeval_0.2.2      
+[43] crayon_1.3.4         whisker_0.3-2        pkgconfig_2.0.2     
+[46] zeallot_0.1.0        xml2_1.2.2           reprex_0.3.0        
+[49] lubridate_1.7.4      assertthat_0.2.1     rmarkdown_1.13      
+[52] httr_1.4.1           rstudioapi_0.10      R6_2.4.0            
+[55] nlme_3.1-140         git2r_0.26.1         compiler_3.6.1      </code></pre>
 </div>
 </div>
 
